@@ -40,5 +40,4 @@ Hệ thống tự động tạo CSDL `library.db` và chèn dữ liệu mẫu kh
 
 Tài khoản mặc định:
 - **Admin**: `admin` / `admin123`
-- **Thủ thư**: `thuthu1` / `123456`
-# PTUD_vibe_coding2
+- **Thủ thư**: `thuthu1` / `thuthu123`
