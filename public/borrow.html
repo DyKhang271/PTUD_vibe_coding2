@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mượn / Trả Sách - Quản Lý Thư Viện</title>
+    
+    <!-- Thêm Phông chữ và Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .split-view {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .half-panel {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+    </style>
+
+    
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <i class='bx bxs-library'></i> Thư Viện ĐH
+            </div>
+            <ul class="nav-links">
+                <li><a href="/dashboard.html" class="nav-link "><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+                <li><a href="/readers.html" class="nav-link "><i class='bx bxs-group'></i> Độc giả</a></li>
+                <li><a href="/categories.html" class="nav-link "><i class='bx bxs-category'></i> Thể loại</a></li>
+                <li><a href="/titles.html" class="nav-link "><i class='bx bxs-book'></i> Đầu sách</a></li>
+                <li><a href="/copies.html" class="nav-link "><i class='bx bxs-copy-alt'></i> Bản sao</a></li>
+                <li><a href="/borrow.html" class="nav-link active"><i class='bx bx-transfer'></i> Mượn / Trả sách</a></li>
+                <li><a href="/reports.html" class="nav-link "><i class='bx bxs-bar-chart-alt-2'></i> Báo cáo</a></li>
+                <li id="adminMenu"><a href="/users.html" class="nav-link "><i class='bx bxs-user-circle'></i> Nhân viên</a></li>
+            </ul>
+            <div class="logout-btn">
+                <div id="usernameDisplay" style="margin-bottom: 12px; font-weight: 700; color: var(--primary); text-align: center;"></div>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%;"><i class='bx bx-log-out'></i> Đăng Xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content glass">
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Mượn / Trả</h1>
+            </div>
+
+            <div class="split-view">
+                <div class="half-panel">
+                    <h2 style="color:var(--primary); margin-bottom:1rem;">Tạo Lập Phiếu Mượn</h2>
+                    <form id="borrowForm">
+                        <div class="form-group">
+                            <label class="form-label">Chọn Độc giả</label>
+                            <select id="readerId" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Mã Cuốn sách (ID Bản sao)</label>
+                            <input type="number" id="copyId" class="form-control" placeholder="Nhập ID bản sao (vd: 1, 2...)">
+                            <small style="color:var(--text-muted)">Phải là cuốn có trạng thái "Khả dụng"</small>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Mượn Sách</button>
+                    </form>
+                </div>
+
+                <div class="half-panel">
+                    <h2 style="color:var(--primary); margin-bottom:1rem;">Trả Sách Nhanh</h2>
+                    <form id="returnForm">
+                        <div class="form-group">
+                            <label class="form-label">Mã Phiếu mượn</label>
+                            <input type="number" id="borrowId" class="form-control" placeholder="Nhập ID phiếu mượn">
+                        </div>
+                        <button type="submit" class="btn" style="background:#10b981; color:#fff; margin-top: 1rem;">Xác Nhận Trả Sách</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="table-container glass">
+                <h2 style="padding: 1rem; border-bottom: 1px solid var(--border);">Lịch Sử Mượn Trả</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Mã Phiếu</th>
+                            <th>Độc giả</th>
+                            <th>Mã cuốn</th>
+                            <th>Tên sách</th>
+                            <th>Ngày mượn</th>
+                            <th>Ngày trả</th>
+                            <th>Trạng Thái</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <!-- Data injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setupLayout();
+            loadReaders();
+            loadData();
+        });
+
+        async function loadReaders() {
+            try {
+                const readers = await apiFetch('/readers');
+                const select = document.getElementById('readerId');
+                select.innerHTML = '<option value="">-- Chọn Độc giả --</option>';
+                readers.forEach((r, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.textContent = `${r.full_name} (TR${r.id.toString().padStart(4, '0')})`;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const data = await apiFetch('/borrows');
+                const tbody = document.getElementById('dataTable');
+                tbody.innerHTML = '';
+                
+                // Sort array to show active borrowing first, then by date descending
+                data.sort((a,b) => {
+                    if (a.status === 'borrowing' && b.status !== 'borrowing') return -1;
+                    if (a.status !== 'borrowing' && b.status === 'borrowing') return 1;
+                    return b.id - a.id;
+                });
+
+                data.forEach((item, index) => {
+                    const badgeClass = item.status === 'borrowing' ? 'badge-warning' : 'badge-success';
+                    const statusText = item.status === 'borrowing' ? 'Đang mượn' : 'Đã trả';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${item.id}</strong></td>
+                        <td>${item.reader_name}</td>
+                        <td>${item.copy_id}</td>
+                        <td style="color:var(--primary)">${item.title_name}</td>
+                        <td>${formatDate(item.borrow_date)}</td>
+                        <td>${item.return_date ? formatDate(item.return_date) : '-'}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td>
+                            ${item.status === 'borrowing' 
+                                ? `<button class="btn btn-sm" style="background:#10b981; color:#fff;" onclick="quickReturn(${item.id})">Trả Sách</button>`
+                                : ''
+                            }
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                alert('Lỗi tải dữ liệu: ' + err.message);
+            }
+        }
+
+        document.getElementById('borrowForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm({
+                readerId: { required: true, message: 'Vui lòng chọn độc giả' },
+                copyId: { required: true, message: 'Vui lòng nhập mã bản sao hợp lệ' }
+            })) return;
+
+            const reader_id = document.getElementById('readerId').value;
+            const copy_id = document.getElementById('copyId').value;
+            const librarian_id = checkAuth().id;
+            const borrow_date = new Date().toISOString().split('T')[0];
+
+            try {
+                await apiFetch('/borrows', 'POST', { copy_id, reader_id, librarian_id, borrow_date });
+                
+                document.getElementById('borrowForm').reset();
+                loadData();
+            } catch (err) {
+                alert('Lỗi mượn sách: ' + err.message);
+            }
+        });
+
+        document.getElementById('returnForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm({
+                borrowId: { required: true, message: 'Vui lòng nhập mã phiếu mượn' }
+            })) return;
+
+            const borrowId = document.getElementById('borrowId').value;
+            await processReturn(borrowId);
+            document.getElementById('returnForm').reset();
+        });
+
+        async function quickReturn(borrowId) {
+            if (confirm('Xác nhận độc giả trả sách cho phiếu ' + borrowId + '?')) {
+                await processReturn(borrowId);
+            }
+        }
+
+        async function processReturn(borrowId) {
+            const return_date = new Date().toISOString().split('T')[0];
+            try {
+                await apiFetch(`/borrows/${borrowId}/return`, 'POST', { return_date });
+                
+                loadData();
+            } catch (err) {
+                alert('Lỗi trả sách: ' + err.message);
+            }
+        }
+    </script>
+
+    
+</body>
+</html>

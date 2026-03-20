@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Độc giả - Quản Lý Thư Viện</title>
+    
+    <!-- Thêm Phông chữ và Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+
+    
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <i class='bx bxs-library'></i> Thư Viện ĐH
+            </div>
+            <ul class="nav-links">
+                <li><a href="/dashboard.html" class="nav-link "><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+                <li><a href="/readers.html" class="nav-link active"><i class='bx bxs-group'></i> Độc giả</a></li>
+                <li><a href="/categories.html" class="nav-link "><i class='bx bxs-category'></i> Thể loại</a></li>
+                <li><a href="/titles.html" class="nav-link "><i class='bx bxs-book'></i> Đầu sách</a></li>
+                <li><a href="/copies.html" class="nav-link "><i class='bx bxs-copy-alt'></i> Bản sao</a></li>
+                <li><a href="/borrow.html" class="nav-link "><i class='bx bx-transfer'></i> Mượn / Trả sách</a></li>
+                <li><a href="/reports.html" class="nav-link "><i class='bx bxs-bar-chart-alt-2'></i> Báo cáo</a></li>
+                <li id="adminMenu"><a href="/users.html" class="nav-link "><i class='bx bxs-user-circle'></i> Nhân viên</a></li>
+            </ul>
+            <div class="logout-btn">
+                <div id="usernameDisplay" style="margin-bottom: 12px; font-weight: 700; color: var(--primary); text-align: center;"></div>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%;"><i class='bx bx-log-out'></i> Đăng Xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content glass">
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Độc giả</h1>
+                <button class="btn btn-primary" onclick="openModal()">+ Thêm Độc giả</button>
+            </div>
+
+            <div class="table-container glass">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Họ và Tên</th>
+                            <th>Lớp</th>
+                            <th>Ngày Sinh</th>
+                            <th>Giới Tính</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <!-- Data rows injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Thêm Độc giả</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="dataForm">
+                <input type="hidden" id="readerId">
+                <div class="form-group">
+                    <label class="form-label" for="fullName">Họ và Tên</label>
+                    <input type="text" id="fullName" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="readerClass">Lớp</label>
+                    <input type="text" id="readerClass" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dob">Ngày Sinh (DD/MM/YYYY)</label>
+                    <input type="text" id="dob" class="form-control" placeholder="DD/MM/YYYY" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="gender">Giới Tính</label>
+                    <select id="gender" class="form-control">
+                        <option value="">Chọn giới tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                </div>
+                <div class="flex-gap mt-4">
+                    <button type="button" class="btn" style="background:#e5e7eb; color:var(--text-main);" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal In thẻ -->
+    <div id="printModal" class="modal">
+        <div class="modal-content" style="max-width: 400px; text-align:center;">
+            <div class="modal-header">
+                <h2 class="modal-title">Thẻ Thư Viện</h2>
+                <button class="close-btn" onclick="closePrintModal()">&times;</button>
+            </div>
+            <div class="card" style="border: 2px solid var(--primary); padding:2rem;">
+                <h3 style="color:var(--primary); margin-bottom: 1rem;">ĐẠI HỌC ABC</h3>
+                <h4 style="margin-bottom: 1.5rem; text-transform: uppercase;">THẺ ĐỘC GIẢ</h4>
+                
+                <p><strong>Họ tên:</strong> <span id="pName"></span></p>
+                <p><strong>Lớp:</strong> <span id="pClass"></span></p>
+                <p><strong>Ngày sinh:</strong> <span id="pDob"></span></p>
+                <p><strong>Giới tính:</strong> <span id="pGender"></span></p>
+                
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px dashed var(--border);">
+                    <small>Mã ĐG: TR<span id="pId"></span></small>
+                </div>
+            </div>
+            <button class="btn btn-primary mt-4" onclick="window.print()">In Thẻ</button>
+        </div>
+    </div>
+
+
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setupLayout();
+            setupDateFormat('dob');
+            loadData();
+        });
+
+        const modal = document.getElementById('formModal');
+        const printModal = document.getElementById('printModal');
+        const form = document.getElementById('dataForm');
+        let isEdit = false;
+
+        async function loadData() {
+            try {
+                const data = await apiFetch('/readers');
+                const tbody = document.getElementById('dataTable');
+                tbody.innerHTML = '';
+                
+                data.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td style="font-weight: 500;">${item.full_name}</td>
+                        <td>${item.class || ''}</td>
+                        <td>${formatDate(item.date_of_birth)}</td>
+                        <td>${item.gender || ''}</td>
+                        <td class="action-btns">
+                            <button class="btn btn-sm btn-primary" onclick='editItem(${JSON.stringify(item)})'>Sửa</button>
+                            <button class="btn btn-sm" style="background:#10b981; color:#fff;" onclick='printCard(${JSON.stringify(item)})'>In thẻ</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteItem(${item.id})">Xóa</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                alert('Lỗi tải dữ liệu: ' + err.message);
+            }
+        }
+
+        function openModal() {
+            isEdit = false;
+            document.getElementById('modalTitle').textContent = 'Thêm Độc giả';
+            form.reset();
+            document.getElementById('readerId').value = '';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        function editItem(item) {
+            isEdit = true;
+            document.getElementById('modalTitle').textContent = 'Sửa Độc giả';
+            document.getElementById('readerId').value = item.id;
+            document.getElementById('fullName').value = item.full_name;
+            document.getElementById('readerClass').value = item.class;
+            document.getElementById('dob').value = formatDate(item.date_of_birth);
+            document.getElementById('gender').value = item.gender;
+            // trigger change to sync custom select if used
+            document.getElementById('gender').dispatchEvent(new Event('change'));
+            modal.classList.add('active');
+        }
+
+        function printCard(item) {
+            document.getElementById('pName').textContent = item.full_name;
+            document.getElementById('pClass').textContent = item.class;
+            document.getElementById('pDob').textContent = formatDate(item.date_of_birth);
+            document.getElementById('pGender').textContent = item.gender;
+            document.getElementById('pId').textContent = item.id.toString().padStart(4, '0');
+            printModal.classList.add('active');
+        }
+
+        function closePrintModal() {
+            printModal.classList.remove('active');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm({
+                fullName: { required: true, message: 'Vui lòng nhập họ tên' },
+                readerClass: { required: true, message: 'Vui lòng nhập lớp' },
+                dob: { required: true, message: 'Vui lòng chọn ngày sinh' },
+                gender: { required: true, message: 'Vui lòng chọn giới tính' }
+            })) return;
+
+            const id = document.getElementById('readerId').value;
+            const dobStr = document.getElementById('dob').value;
+            if (dobStr.length !== 10) { showToast('Lỗi', 'Ngày sinh không đúng định dạng DD/MM/YYYY', 'error'); return; }
+            const parts = dobStr.split('/');
+            const dobFormatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+            const dob = new Date(dobFormatted);
+            if (isNaN(dob.getTime())) { showToast('Lỗi', 'Ngày sinh không hợp lệ', 'error'); return; }
+
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) { age--; }
+            if (dob > today) { showToast('Lỗi', 'Ngày sinh không hợp lệ (lớn hơn hiện tại)!', 'error'); return; }
+            if (age < 15) { showToast('Lỗi', 'Độc giả (Sinh viên) phải từ 15 tuổi trở lên!', 'error'); return; }
+            
+            const body = {
+                full_name: document.getElementById('fullName').value,
+                class: document.getElementById('readerClass').value,
+                date_of_birth: dobFormatted,
+                gender: document.getElementById('gender').value
+            };
+
+            try {
+                if (isEdit) {
+                    await apiFetch(`/readers/${id}`, 'PUT', body);
+                    
+                } else {
+                    await apiFetch('/readers', 'POST', body);
+                    
+                }
+                closeModal();
+                loadData();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        });
+
+        async function deleteItem(id) {
+            showConfirm('Xác nhận', 'Bạn có chắc chắn muốn xóa độc giả này?', async () => {
+                try {
+                    await apiFetch(`/readers/${id}`, 'DELETE');
+                    loadData();
+                } catch (err) {
+                    alert('Lỗi: ' + err.message);
+                }
+            });
+        }
+    </script>
+
+    
+</body>
+</html>

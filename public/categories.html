@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Thể loại - Quản Lý Thư Viện</title>
+    
+    <!-- Thêm Phông chữ và Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+
+    
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <i class='bx bxs-library'></i> Thư Viện ĐH
+            </div>
+            <ul class="nav-links">
+                <li><a href="/dashboard.html" class="nav-link "><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+                <li><a href="/readers.html" class="nav-link "><i class='bx bxs-group'></i> Độc giả</a></li>
+                <li><a href="/categories.html" class="nav-link active"><i class='bx bxs-category'></i> Thể loại</a></li>
+                <li><a href="/titles.html" class="nav-link "><i class='bx bxs-book'></i> Đầu sách</a></li>
+                <li><a href="/copies.html" class="nav-link "><i class='bx bxs-copy-alt'></i> Bản sao</a></li>
+                <li><a href="/borrow.html" class="nav-link "><i class='bx bx-transfer'></i> Mượn / Trả sách</a></li>
+                <li><a href="/reports.html" class="nav-link "><i class='bx bxs-bar-chart-alt-2'></i> Báo cáo</a></li>
+                <li id="adminMenu"><a href="/users.html" class="nav-link "><i class='bx bxs-user-circle'></i> Nhân viên</a></li>
+            </ul>
+            <div class="logout-btn">
+                <div id="usernameDisplay" style="margin-bottom: 12px; font-weight: 700; color: var(--primary); text-align: center;"></div>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%;"><i class='bx bx-log-out'></i> Đăng Xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content glass">
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Thể loại sách</h1>
+                <button class="btn btn-primary" onclick="openModal()">+ Thêm Thể loại</button>
+            </div>
+
+            <div class="table-container glass">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên Thể Loại</th>
+                            <th>Mô tả</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <!-- Data injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Thêm Thể loại</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="dataForm">
+                <input type="hidden" id="categoryId">
+                <div class="form-group">
+                    <label class="form-label" for="categoryName">Tên Thể Loại</label>
+                    <input type="text" id="categoryName" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="description">Mô tả</label>
+                    <textarea id="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="flex-gap mt-4">
+                    <button type="button" class="btn" style="background:#e5e7eb; color:var(--text-main);" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setupLayout();
+            loadData();
+        });
+
+        const modal = document.getElementById('formModal');
+        const form = document.getElementById('dataForm');
+        let isEdit = false;
+
+        async function loadData() {
+            try {
+                const data = await apiFetch('/categories');
+                const tbody = document.getElementById('dataTable');
+                tbody.innerHTML = '';
+                
+                data.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td style="font-weight: 500;">${item.category_name}</td>
+                        <td>${item.description || ''}</td>
+                        <td class="action-btns">
+                            <button class="btn btn-sm btn-primary" onclick='editItem(${JSON.stringify(item)})'>Sửa</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteItem(${item.id})">Xóa</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        }
+
+        function openModal() {
+            isEdit = false;
+            document.getElementById('modalTitle').textContent = 'Thêm Thể loại';
+            form.reset();
+            document.getElementById('categoryId').value = '';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        function editItem(item) {
+            isEdit = true;
+            document.getElementById('modalTitle').textContent = 'Sửa Thể loại';
+            document.getElementById('categoryId').value = item.id;
+            document.getElementById('categoryName').value = item.category_name;
+            document.getElementById('description').value = item.description;
+            modal.classList.add('active');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!validateForm({
+                categoryName: { required: true, message: 'Vui lòng nhập tên thể loại' }
+            })) return;
+
+            const id = document.getElementById('categoryId').value;
+            const body = {
+                category_name: document.getElementById('categoryName').value,
+                description: document.getElementById('description').value
+            };
+
+            try {
+                if (isEdit) {
+                    await apiFetch(`/categories/${id}`, 'PUT', body);
+                    
+                } else {
+                    await apiFetch('/categories', 'POST', body);
+                    
+                }
+                closeModal();
+                loadData();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        });
+
+        async function deleteItem(id) {
+            showConfirm('Xác nhận', 'Bạn có chắc chắn muốn xóa thể loại này?', async () => {
+                try {
+                    await apiFetch(`/categories/${id}`, 'DELETE');
+                    loadData();
+                } catch (err) {
+                    alert('Lỗi: ' + err.message);
+                }
+            });
+        }
+    </script>
+
+    
+</body>
+</html>

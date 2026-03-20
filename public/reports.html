@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo cáo - Quản Lý Thư Viện</title>
+    
+    <!-- Thêm Phông chữ và Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+
+    
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <i class='bx bxs-library'></i> Thư Viện ĐH
+            </div>
+            <ul class="nav-links">
+                <li><a href="/dashboard.html" class="nav-link "><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+                <li><a href="/readers.html" class="nav-link "><i class='bx bxs-group'></i> Độc giả</a></li>
+                <li><a href="/categories.html" class="nav-link "><i class='bx bxs-category'></i> Thể loại</a></li>
+                <li><a href="/titles.html" class="nav-link "><i class='bx bxs-book'></i> Đầu sách</a></li>
+                <li><a href="/copies.html" class="nav-link "><i class='bx bxs-copy-alt'></i> Bản sao</a></li>
+                <li><a href="/borrow.html" class="nav-link "><i class='bx bx-transfer'></i> Mượn / Trả sách</a></li>
+                <li><a href="/reports.html" class="nav-link active"><i class='bx bxs-bar-chart-alt-2'></i> Báo cáo</a></li>
+                <li id="adminMenu"><a href="/users.html" class="nav-link "><i class='bx bxs-user-circle'></i> Nhân viên</a></li>
+            </ul>
+            <div class="logout-btn">
+                <div id="usernameDisplay" style="margin-bottom: 12px; font-weight: 700; color: var(--primary); text-align: center;"></div>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%;"><i class='bx bx-log-out'></i> Đăng Xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content glass">
+            <div class="page-header">
+                <h1 class="page-title">Báo Cáo Thống Kê</h1>
+            </div>
+
+            <div class="card" style="margin-bottom: 2rem;">
+                <h2 style="color:var(--primary); margin-bottom: 1rem;">1. Top 10 Sách Được Mượn Nhiều Nhất</h2>
+                <div style="position: relative; height: 350px; width: 100%; border-radius: 20px; padding: 1.5rem;" class="glass">
+                    <canvas id="topBooksChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 style="color:var(--danger); margin-bottom: 1rem;">2. Danh Sách Độc Giả Chưa Trả Sách</h2>
+                <div class="table-container glass" style="box-shadow: none;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Độc Giả</th>
+                                <th>Lớp</th>
+                                <th>Tên Sách</th>
+                                <th>Ngày Mượn</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lateReadersTable">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setupLayout();
+            loadReports();
+        });
+
+        async function loadReports() {
+            try {
+                // Fetch Most Borrowed
+                const topBooks = await apiFetch('/reports/most-borrowed');
+                if (topBooks.length > 0) {
+                    const labels = topBooks.map(b => b.title_name);
+                    const data = topBooks.map(b => b.borrow_count);
+                    const ctx = document.getElementById('topBooksChart').getContext('2d');
+                    
+                    // Gradient fill for beautiful chart
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.9)');
+                    gradient.addColorStop(1, 'rgba(168, 85, 247, 0.6)');
+
+                    new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Số lần mượn',
+                                data: data,
+                                backgroundColor: gradient,
+                                borderWidth: 0,
+                                borderRadius: 8,
+                                borderSkipped: false
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { 
+                                y: { beginAtZero: true, ticks: { stepSize: 1, color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                                x: { ticks: { color: '#64748b', font: { family: 'Inter', weight: 600 } }, grid: { display: false } }
+                            },
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                                    titleFont: { family: 'Inter', size: 14 },
+                                    bodyFont: { family: 'Inter', size: 13 },
+                                    padding: 12,
+                                    cornerRadius: 10
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Fetch Not Returned
+                const lateReaders = await apiFetch('/reports/not-returned');
+                const lrTbody = document.getElementById('lateReadersTable');
+                if (lateReaders.length === 0) {
+                    lrTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Không có độc giả nào chưa trả sách</td></tr>';
+                } else {
+                    lateReaders.forEach(r => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${r.full_name}</td>
+                            <td>${r.class || ''}</td>
+                            <td>${r.title_name}</td>
+                            <td style="color:var(--danger);">${formatDate(r.borrow_date)}</td>
+                        `;
+                        lrTbody.appendChild(tr);
+                    });
+                }
+            } catch (err) {
+                alert('Lỗi tải báo cáo: ' + err.message);
+            }
+        }
+    </script>
+
+    
+</body>
+</html>

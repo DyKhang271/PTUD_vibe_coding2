@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Đầu sách - Quản Lý Thư Viện</title>
+    
+    <!-- Thêm Phông chữ và Icon -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+
+
+    
+</head>
+<body>
+    <div class="layout">
+        <!-- Sidebar -->
+        <!-- Sidebar -->
+        <aside class="sidebar glass">
+            <div class="sidebar-header">
+                <i class='bx bxs-library'></i> Thư Viện ĐH
+            </div>
+            <ul class="nav-links">
+                <li><a href="/dashboard.html" class="nav-link "><i class='bx bxs-dashboard'></i> Dashboard</a></li>
+                <li><a href="/readers.html" class="nav-link "><i class='bx bxs-group'></i> Độc giả</a></li>
+                <li><a href="/categories.html" class="nav-link "><i class='bx bxs-category'></i> Thể loại</a></li>
+                <li><a href="/titles.html" class="nav-link active"><i class='bx bxs-book'></i> Đầu sách</a></li>
+                <li><a href="/copies.html" class="nav-link "><i class='bx bxs-copy-alt'></i> Bản sao</a></li>
+                <li><a href="/borrow.html" class="nav-link "><i class='bx bx-transfer'></i> Mượn / Trả sách</a></li>
+                <li><a href="/reports.html" class="nav-link "><i class='bx bxs-bar-chart-alt-2'></i> Báo cáo</a></li>
+                <li id="adminMenu"><a href="/users.html" class="nav-link "><i class='bx bxs-user-circle'></i> Nhân viên</a></li>
+            </ul>
+            <div class="logout-btn">
+                <div id="usernameDisplay" style="margin-bottom: 12px; font-weight: 700; color: var(--primary); text-align: center;"></div>
+                <button id="logoutBtn" class="btn btn-danger" style="width: 100%;"><i class='bx bx-log-out'></i> Đăng Xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content glass">
+            <div class="page-header">
+                <h1 class="page-title">Quản lý Đầu sách</h1>
+                <button class="btn btn-primary" onclick="openModal()">+ Thêm Đầu sách</button>
+            </div>
+
+            <div class="table-container glass">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tên Sách</th>
+                            <th>Tác Giả</th>
+                            <th>NXB</th>
+                            <th>Thể Loại</th>
+                            <th>Số Lượng Bản</th>
+                            <th>Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <!-- Data injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="formModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Thêm Đầu sách</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="dataForm">
+                <input type="hidden" id="titleId">
+                <div class="form-group">
+                    <label class="form-label" for="titleName">Tên Sách</label>
+                    <input type="text" id="titleName" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="author">Tác Giả</label>
+                    <input type="text" id="author" class="form-control">
+                </div>
+                <div class="flex-gap">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="publisher">Nhà Xuất Bản</label>
+                        <input type="text" id="publisher" class="form-control">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="pages">Số Trang</label>
+                        <input type="number" id="pages" class="form-control">
+                    </div>
+                </div>
+                <div class="flex-gap">
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="size">Kích Thước</label>
+                        <input type="text" id="size" class="form-control" placeholder="15x22 cm">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label class="form-label" for="categoryId">Thể Loại</label>
+                        <select id="categoryId" class="form-control">
+                            <!-- Options injected by JS -->
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex-gap mt-4">
+                    <button type="button" class="btn" style="background:#e5e7eb; color:var(--text-main);" onclick="closeModal()">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            setupLayout();
+            loadCategories();
+            loadData();
+        });
+
+        const modal = document.getElementById('formModal');
+        const form = document.getElementById('dataForm');
+        let isEdit = false;
+
+        async function loadCategories() {
+            try {
+                const cats = await apiFetch('/categories');
+                const select = document.getElementById('categoryId');
+                select.innerHTML = '<option value="">Chọn thể loại</option>';
+                cats.forEach((c, index) => {
+                    const opt = document.createElement('option');
+                    opt.value = c.id;
+                    opt.textContent = c.category_name;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadData() {
+            try {
+                const data = await apiFetch('/titles');
+                const tbody = document.getElementById('dataTable');
+                tbody.innerHTML = '';
+                
+                data.forEach((item, index) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${index + 1}</td>
+                        <td style="font-weight: 500; color: var(--primary);">${item.title_name}</td>
+                        <td>${item.author || ''}</td>
+                        <td>${item.publisher || ''}</td>
+                        <td><span class="badge" style="background:#e0e7ff; color:var(--primary);">${item.category_name || 'N/A'}</span></td>
+                        <td><strong>${item.quantity}</strong></td>
+                        <td class="action-btns">
+                            <button class="btn btn-sm btn-primary" onclick='editItem(${JSON.stringify(item).replace(/'/g, "&#39;")})'>Sửa</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteItem(${item.id})">Xóa</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                alert('Lỗi tải dữ liệu: ' + err.message);
+            }
+        }
+
+        function openModal() {
+            isEdit = false;
+            document.getElementById('modalTitle').textContent = 'Thêm Đầu sách';
+            form.reset();
+            document.getElementById('titleId').value = '';
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            modal.classList.remove('active');
+        }
+
+        function editItem(item) {
+            isEdit = true;
+            document.getElementById('modalTitle').textContent = 'Sửa Đầu sách';
+            document.getElementById('titleId').value = item.id;
+            document.getElementById('titleName').value = item.title_name;
+            document.getElementById('author').value = item.author;
+            document.getElementById('publisher').value = item.publisher;
+            document.getElementById('pages').value = item.pages;
+            document.getElementById('size').value = item.size;
+            document.getElementById('categoryId').value = item.category_id;
+            modal.classList.add('active');
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            if (!validateForm({
+                titleName: { required: true, message: 'Vui lòng nhập tên sách' },
+                author: { required: true, message: 'Vui lòng nhập tác giả' },
+                categoryId: { required: true, message: 'Vui lòng chọn thể loại' }
+            })) return;
+
+            const id = document.getElementById('titleId').value;
+            const body = {
+                title_name: document.getElementById('titleName').value,
+                author: document.getElementById('author').value,
+                publisher: document.getElementById('publisher').value,
+                pages: document.getElementById('pages').value,
+                size: document.getElementById('size').value,
+                category_id: document.getElementById('categoryId').value
+            };
+
+            try {
+                if (isEdit) {
+                    await apiFetch(`/titles/${id}`, 'PUT', body);
+                    
+                } else {
+                    await apiFetch('/titles', 'POST', body);
+                    
+                }
+                closeModal();
+                loadData();
+            } catch (err) {
+                alert('Lỗi: ' + err.message);
+            }
+        });
+
+        function deleteItem(id) {
+            showConfirm('Xác nhận Xóa', 'Bạn có chắc chắn muốn xóa đầu sách này? LƯU Ý: Phải thiết lập xóa tất cả bản sao sách của đầu sách này trước.', async () => {
+                try {
+                    const res = await apiFetch(`/titles/${id}`, 'DELETE');
+                    
+                    loadData();
+                } catch (err) {
+                    alert('Lỗi: ' + err.message);
+                }
+            });
+        }
+    </script>
+
+    
+</body>
+</html>
